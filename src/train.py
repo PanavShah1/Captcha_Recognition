@@ -12,6 +12,7 @@ import dataset
 from model import CaptchaModel
 import engine
 from pprint import pprint
+import pickle as pkl
 
 def decode_predictions(preds, encoder):
     preds = preds.permute(1, 0, 2)
@@ -38,11 +39,27 @@ def run_training():
     targets = [[c for c in x] for x in targets_orig]
     targets_flat = [c for clist in targets for c in clist]
 
-    lbl_enc = preprocessing.LabelEncoder()
-    lbl_enc.fit(targets_flat)
-    targets_enc = [lbl_enc.transform(x) for x in targets]
-    targets_enc = np.array(targets_enc) 
-    targets_enc = targets_enc + 1
+    if not os.path.exists("assets/encoder.pkl"):
+        lbl_enc = preprocessing.LabelEncoder()
+        lbl_enc.fit(targets_flat)
+        targets_enc = [lbl_enc.transform(x) for x in targets]
+        targets_enc = np.array(targets_enc) 
+        targets_enc = targets_enc + 1
+
+        with open("assets/encoder.pkl", "wb") as f:
+            pkl.dump({
+                "lbl_enc": lbl_enc,
+                "targets_enc": targets_enc,
+            }, f)
+    
+    else:
+        with open("assets/encoder.pkl", "rb") as f:
+            data = pkl.load(f)
+            lbl_enc = data["lbl_enc"]
+            targets_enc = data["targets_enc"]
+    
+
+
     print(targets_enc)
     print(len(lbl_enc.classes_))
 
