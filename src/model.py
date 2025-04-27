@@ -66,77 +66,92 @@ class CaptchaModel(nn.Module):
         return x, None
     
 class DeepCaptchaModel(nn.Module):
-    def __init__(self, num_chars):
+    def __init__(self, num_chars, img_height=75, img_width=300):
         super(DeepCaptchaModel, self).__init__()
-        
-        # Convolutional layers (with increased depth)
-        self.conv_1 = nn.Conv2d(3, 128, kernel_size=(3, 3), padding=(1, 1))
-        self.bn1 = nn.BatchNorm2d(128)
-        self.max_pool_1 = nn.MaxPool2d(kernel_size=(2, 2))
-        
-        self.conv_2 = nn.Conv2d(128, 256, kernel_size=(3, 3), padding=(1, 1))
-        self.bn2 = nn.BatchNorm2d(256)
-        self.max_pool_2 = nn.MaxPool2d(kernel_size=(2, 2))
 
-        self.conv_3 = nn.Conv2d(256, 512, kernel_size=(3, 3), padding=(1, 1))
-        self.bn3 = nn.BatchNorm2d(512)
-        self.max_pool_3 = nn.MaxPool2d(kernel_size=(2, 2))
-        
-        # Adding a residual connection to the third convolutional layer
-        self.conv_res = nn.Conv2d(128, 512, kernel_size=(1, 1), padding=(0, 0))  # Residual mapping
+        # Convolutional Backbone
+        self.conv_1 = nn.Sequential(
+            nn.Conv2d(3, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
 
-        # Linear layers (for added complexity)
-        self.linear_1 = nn.Linear(512 * 9 * 37, 128)  # Fix this dimension
-        self.linear_2 = nn.Linear(128, 64)
-        self.drop_1 = nn.Dropout(0.3)
+        self.conv_2 = nn.Sequential(
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
 
-        # Increased GRU layer complexity
-        self.gru = nn.GRU(64, 64, bidirectional=True, num_layers=3, dropout=0.3)
-        self.output = nn.Linear(128, num_chars + 1)
+        self.conv_3 = nn.Sequential(
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 1))  # only pool height a bit here to keep width longer for GRU
+        )
+
+        self.conv_4 = nn.Sequential(
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 1))
+        )
+
+        # Dynamically compute fc input size
+        dummy_input = torch.randn(1, 3, img_height, img_width)
+        x = self._forward_conv(dummy_input)
+        conv_out_features = x.shape[2] * x.shape[1]  # channels * height
+
+        self.fc = nn.Linear(conv_out_features, 256)
+
+        # GRU for sequence modeling
+        self.gru = nn.GRU(
+            input_size=256,
+            hidden_size=128,
+            num_layers=2,
+            batch_first=True,
+            bidirectional=True,
+            dropout=0.25
+        )
+
+        # Output
+        self.output = nn.Linear(128 * 2, num_chars + 1)  # +1 for CTC blank token
+
+    def _forward_conv(self, x):
+        x = self.conv_1(x)
+        x = self.conv_2(x)
+        x = self.conv_3(x)
+        x = self.conv_4(x)
+        return x
 
     def forward(self, images, targets=None):
         bs, c, h, w = images.size()
 
-        # Convolutional pass
-        x = F.relu(self.bn1(self.conv_1(images)))
-        x = self.max_pool_1(x)
-        
-        x = F.relu(self.bn2(self.conv_2(x)))
-        x = self.max_pool_2(x)
-        
-        x = F.relu(self.bn3(self.conv_3(x)))
-        x = self.max_pool_3(x)
-        
-        # Apply residual connection (skip connection)
-        x_res = self.conv_res(self.max_pool_1(F.relu(self.bn1(self.conv_1(images)))))
-        x = x + x_res  # Element-wise addition (residual skip connection)
-        
-        # Reshape for GRU
-        x = x.permute(0, 3, 1, 2)  # [batch_size, width, 512, height]
-        x = x.view(bs, x.size(1), -1)  # Flatten height
-        x = F.relu(self.linear_1(x))
-        x = self.drop_1(x)
-        x = F.relu(self.linear_2(x))
+        x = self._forward_conv(images)
 
-        # GRU pass (with more layers and bidirectional)
+        # Prepare for RNN
+        x = x.permute(0, 3, 1, 2)  # [batch, width, channels, height]
+        x = x.view(bs, x.size(1), -1)  # Flatten channels and height
+        x = self.fc(x)
+
+        # GRU
         x, _ = self.gru(x)
-        
-        # Final output layer
-        x = self.output(x)
-        x = x.permute(1, 0, 2)  # [seq_len, batch_size, num_classes]
-        
-        if targets is not None:
-            log_softmax_values = F.log_softmax(x, 2)
-            input_lengths = torch.full((bs,), w // 2, dtype=torch.int32)  # Adjust according to width
-            target_lengths = torch.sum(targets != 0, dim=1)  # Target lengths
-            
-            loss = nn.CTCLoss(blank=0)(
-                log_softmax_values, targets, input_lengths, target_lengths
-            )
-            return x, loss
-        
-        return x, None
 
+        # Final output
+        x = self.output(x)
+
+        # CTC loss expects (T, N, C)
+        x = x.permute(1, 0, 2)
+
+        if targets is not None:
+            log_softmax_values = F.log_softmax(x, dim=2)
+            input_lengths = torch.full(size=(bs,), fill_value=log_softmax_values.size(0), dtype=torch.int32)
+            target_lengths = torch.full(size=(bs,), fill_value=targets.size(1), dtype=torch.int32)
+            loss = nn.CTCLoss(blank=0)(log_softmax_values, targets, input_lengths, target_lengths)
+            return x, loss
+
+        return x, None
 
 if __name__ == "__main__":
     cm = CaptchaModel(num_chars=19)

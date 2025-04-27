@@ -35,7 +35,7 @@ def decode_predictions(preds, encoder):
 
 
 def run_training():
-    image_files = glob.glob(os.path.join(config.DATA_DIR, "*.jpg"))
+    image_files = glob.glob(os.path.join(config.DATA_DIR, f"*.{config.IMAGE_TYPE}"))
     print(len(image_files))
     targets_orig = [x.split("/")[-1][:-4] for x in image_files]
     targets = [[c for c in x] for x in targets_orig]
@@ -103,7 +103,7 @@ def run_training():
         shuffle=False
     )
 
-    model = CaptchaModel(num_chars=len(lbl_enc.classes_))
+    model = DeepCaptchaModel(num_chars=len(lbl_enc.classes_))
     model.to(config.DEVICE)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
@@ -133,7 +133,7 @@ def run_training():
         torch.save(model.state_dict(), f"models/{config.MODEL_NAME}.pth")
 
         with open(f"assets/loss/{date}.csv", "a") as f:
-            f.write(f"{epoch}, {train_loss}, {valid_loss}, {random_5_nums}\n")
+            f.write(f"{epoch}, {train_loss}, {valid_loss}\n")
             
         
         scheduler.step(valid_loss)
