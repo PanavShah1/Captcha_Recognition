@@ -41,7 +41,8 @@ def run_training():
     lbl_enc = preprocessing.LabelEncoder()
     lbl_enc.fit(targets_flat)
     targets_enc = [lbl_enc.transform(x) for x in targets]
-    targets_enc = np.array(targets_enc) + 1
+    targets_enc = np.array(targets_enc) 
+    targets_enc = targets_enc + 1
     print(targets_enc)
     print(len(lbl_enc.classes_))
 
@@ -80,6 +81,10 @@ def run_training():
         optimizer, factor=0.5, patience=3, verbose=True
     )
 
+    os.makedirs("models", exist_ok=True)
+    if os.path.exists("models/captcha_model_v0.pth"):
+        model.load_state_dict(torch.load("models/captcha_model_v0.pth"))
+    
     for epoch in range(config.EPOCHS):
         train_loss = engine.train_fn(model, train_loader, optimizer)
         valid_preds, valid_loss = engine.eval_fn(model, test_loader)
@@ -87,8 +92,13 @@ def run_training():
         for vp in valid_preds:
             current_preds = decode_predictions(vp, lbl_enc)
             valid_cap_preds.extend(current_preds)
-        pprint(list(zip(test_orig_targets, valid_cap_preds))[6:11])
+        
+        random_5_nums = np.random.randint(0, len(test_orig_targets), 5)
+        pairs = list(zip(test_orig_targets, valid_cap_preds))
+        pprint([pairs[i] for i in random_5_nums])
         pprint(f"Epoch {epoch}, train_loss={train_loss}, valid_loss={valid_loss}")
+        
+        torch.save(model.state_dict(), "models/captcha_model_v0.pth")
 
 if __name__ == "__main__":
     run_training()

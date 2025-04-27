@@ -1,4 +1,4 @@
-DATA_DIR = "captcha_images_v2"
+DATA_DIR = "dataset/captcha_images_v2"
 BATCH_SIZE = 8
 IMAGE_WIDTH = 300
 IMAGE_HEIGHT = 75
