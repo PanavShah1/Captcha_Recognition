@@ -5,7 +5,8 @@ import config
 def train_fn(model, data_loader, optimizer):
     model.train()
     fin_loss = 0
-    tk = tqdm(data_loader, total=len(data_loader))
+    # tk = tqdm(data_loader, total=len(data_loader))
+    tk = data_loader
     for data in tk:
         for k, v in data.items():
             data[k] = v.to(config.DEVICE)
@@ -21,7 +22,8 @@ def eval_fn(model, data_loader):
     with torch.no_grad():
         fin_loss = 0
         fin_preds = []
-        tk = tqdm(data_loader, total=len(data_loader))
+        # tk = tqdm(data_loader, total=len(data_loader))
+        tk = data_loader
         for data in tk:
             for k, v in data.items():
                 data[k] = v.to(config.DEVICE)

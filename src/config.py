@@ -1,7 +1,9 @@
-DATA_DIR = "dataset/captcha_images_v2"
+DATA_DIR = "dataset/captcha_small"
 BATCH_SIZE = 8
 IMAGE_WIDTH = 300
 IMAGE_HEIGHT = 75
 NUM_WORKERS = 8
 EPOCHS = 200
 DEVICE = "cuda" 
+MODEL_NAME = "captcha_model_v3"
+ENCODER = "encoder3.pkl"
