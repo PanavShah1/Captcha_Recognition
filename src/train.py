@@ -9,7 +9,7 @@ from sklearn import metrics
 
 import config
 import dataset
-from model import CaptchaModel, DeepCaptchaModel
+from model import CaptchaModel, DeepCaptchaModel, DeepCaptchaModelSmallerTimeSteps
 import engine
 from pprint import pprint
 import pickle as pkl
@@ -41,31 +41,31 @@ def run_training():
     targets = [[c for c in x] for x in targets_orig]
     targets_flat = [c for clist in targets for c in clist]
 
-    if not os.path.exists(f"assets/{config.ENCODER}"):
-        create_encoder = True
-    else:
-        with open(f"assets/{config.ENCODER}", "rb") as f:
-            data = pkl.load(f)
-            lbl_enc = data["lbl_enc"]
-            targets_enc = data["targets_enc"]
+    # if not os.path.exists(f"assets/{config.ENCODER}"):
+    #     create_encoder = True
+    # else:
+    #     with open(f"assets/{config.ENCODER}", "rb") as f:
+    #         data = pkl.load(f)
+    #         lbl_enc = data["lbl_enc"]
+    #         targets_enc = data["targets_enc"]
         
-        if len(targets_enc) == 0:
-            create_encoder = True
-        else:
-            create_encoder = False
+    #     if len(targets_enc) == 0:
+    #         create_encoder = True
+    #     else:
+    #         create_encoder = False
 
-    if create_encoder:
-        lbl_enc = preprocessing.LabelEncoder()
-        lbl_enc.fit(targets_flat)
-        targets_enc = [lbl_enc.transform(x) for x in targets]
-        targets_enc = np.array(targets_enc) 
-        targets_enc = targets_enc + 1
+    # if create_encoder:
+    lbl_enc = preprocessing.LabelEncoder()
+    lbl_enc.fit(targets_flat)
+    targets_enc = [lbl_enc.transform(x) for x in targets]
+    targets_enc = np.array(targets_enc) 
+    targets_enc = targets_enc + 1
 
-        with open(f"assets/{config.ENCODER}", "wb") as f:
-            pkl.dump({
-                "lbl_enc": lbl_enc,
-                "targets_enc": targets_enc,
-            }, f)
+    with open(f"assets/{config.ENCODER}", "wb") as f:
+        pkl.dump({
+            "lbl_enc": lbl_enc,
+            "targets_enc": targets_enc,
+        }, f)
 
 
 
@@ -103,7 +103,7 @@ def run_training():
         shuffle=False
     )
 
-    model = DeepCaptchaModel(num_chars=len(lbl_enc.classes_))
+    model = DeepCaptchaModelSmallerTimeSteps(num_chars=len(lbl_enc.classes_))
     model.to(config.DEVICE)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)

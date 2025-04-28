@@ -7,17 +7,17 @@ import os
 from pathlib import Path
 from sklearn import preprocessing
 
-from model import CaptchaModel
+from model import CaptchaModel, DeepCaptchaModel, DeepCaptchaModelSmallerTimeSteps
 from dataset import ClassificationDataset
 import config
 from train import decode_predictions
 from pprint import pprint
 
-MODEL_PATH = Path("models/captcha_model_v0.pth")
+MODEL_PATH = Path("models/captcha_model_temp_3_copy.pth")
 IMAGE_PATHS = Path("test_images")
-ENCODER_PATH = Path("assets/encoder.pkl")
+ENCODER_PATH = Path("assets/encoder_temp_3_copy.pkl")
 
-images = list(IMAGE_PATHS.glob("*.png"))  
+images = list(IMAGE_PATHS.glob("*.jpg"))  
 print(images)
 
 with open(ENCODER_PATH, "rb") as f:
@@ -31,6 +31,7 @@ lbl_enc_.classes_ = lbl_enc.classes_
 print(lbl_enc_.classes_)
 
 dataset = ClassificationDataset(images, targets=targets_enc, resize=(config.IMAGE_HEIGHT, config.IMAGE_WIDTH))
+print(dataset[0]['images'].shape)
 loader = torch.utils.data.DataLoader(
     dataset,
     batch_size=config.BATCH_SIZE,
@@ -39,7 +40,7 @@ loader = torch.utils.data.DataLoader(
 )
 print(f"Dataset size: {len(dataset)}")
 
-model = CaptchaModel(num_chars=len(lbl_enc.classes_))
+model = DeepCaptchaModelSmallerTimeSteps(num_chars=len(lbl_enc.classes_))
 model.load_state_dict(torch.load(MODEL_PATH, map_location=config.DEVICE))
 model.to(config.DEVICE)
 model.eval()
