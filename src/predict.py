@@ -13,7 +13,7 @@ import config
 from train import decode_predictions
 from pprint import pprint
 
-MODEL_PATH = Path("models/captcha_model_temp_3_copy.pth")
+MODEL_PATH = Path("models/captcha_model_temp_3.pth")
 IMAGE_PATHS = Path("test_images")
 ENCODER_PATH = Path("assets/encoder_temp_3_copy.pkl")
 
@@ -53,4 +53,6 @@ for data in loader:
     batch_preds = batch_preds.cpu().numpy()
     batch_preds = torch.tensor(batch_preds)
     decoded_preds = decode_predictions(batch_preds, lbl_enc_)
-    pprint(decoded_preds)
+    for image, decoded_pred in zip(images, decoded_preds):
+        print(image)
+        print(decoded_pred)
