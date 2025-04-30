@@ -1,0 +1,36 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-top: 50px;
+}
+
+.container {
+    max-width: 400px;
+    margin: auto;
+}
+
+#preview {
+    margin-top: 20px;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ccc;
+    padding: 5px;
+}
+
+#resultBox {
+    margin-top: 20px;
+    font-size: 1.2em;
+    color: green;
+    border: 1px solid #aaa;
+    padding: 10px;
+}
+
+#pasteArea {
+    margin: 20px auto;
+    border: 2px dashed #aaa;
+    padding: 20px;
+    color: #777;
+    cursor: pointer;
+    max-width: 400px;
+}
+

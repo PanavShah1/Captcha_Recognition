@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Captcha Decoder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Captcha Decoder</h1>
+    <div class="container">
+        <input type="file" id="imageInput" accept="image/*" />
+        <div id="pasteArea">Paste an image here (Ctrl+V)</div>
+        <img id="preview" src="" alt="Image Preview" style="display:none;" />
+        <button onclick="submitImage()">Decode Captcha</button>
+        <div id="resultBox">Prediction will appear here.</div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
