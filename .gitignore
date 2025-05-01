@@ -4,5 +4,5 @@ assets/*
 models/*
 !models/captcha_model_final.pth
 loss/
-nuhup/*
+nohup/*
 extract_loss.py
