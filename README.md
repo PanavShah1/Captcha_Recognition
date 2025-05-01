@@ -19,7 +19,7 @@ run <code>src/predict.py</code>
 
 ## Run the Website
 Start the backend server : <br><code>uvicorn website.backend.main:app --reload --port 8080</code><br>
-Run the frontend : <br><code> cd website/frontend</code><br><code>python3 -m http.server 8000</code>
+Run the frontend : <br><code>cd website/frontend</code><br><code>python3 -m http.server 8000</code>
 
 ## Model
 The <code>DeepCaptchaModel</code> is a neural network designed for image-to-sequence tasks like CAPTCHA recognition. It begins with three convolutional layers interleaved with batch normalization and ReLU activations to extract spatial features while progressively reducing the input dimensions. The output of the final convolutional block is reshaped into a sequence along the image width, flattening the channel and height dimensions. A linear layer followed by dropout maps these features into a lower-dimensional space, which is then passed through a two-layer bidirectional GRU to capture temporal dependencies in both directions. The model concludes with a fully connected layer that outputs class probabilities for each time step, with an additional class for the CTC blank token. During training, it uses the CTC (Connectionist Temporal Classification) loss, allowing it to learn sequence alignments without requiring pre-segmented labels.

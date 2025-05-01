@@ -3,3 +3,6 @@ assets/*
 !assets/encoder_final.pkl
 models/*
 !models/captcha_model_final.pth
+loss/
+nuhup/
+extract_loss.py
