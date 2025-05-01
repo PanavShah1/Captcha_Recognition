@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 from PIL import ImageFile
 
-import config
+import src.config as config
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 

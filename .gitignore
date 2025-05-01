@@ -1,1 +1,5 @@
 dataset/
+assets/*
+!assets/encoder_final.pkl
+models/*
+!models/captcha_model_final.pth

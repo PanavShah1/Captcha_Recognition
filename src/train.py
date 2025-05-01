@@ -7,10 +7,10 @@ from sklearn import preprocessing
 from sklearn import model_selection
 from sklearn import metrics
 
-import config
-import dataset
-from model import CaptchaModel, DeepCaptchaModel, DeepCaptchaModelSmallerTimeSteps
-import engine
+import src.config as config
+import src.dataset as dataset
+from src.model import CaptchaModel, DeepCaptchaModel
+import src.engine as engine
 from pprint import pprint
 import pickle as pkl
 import datetime 
@@ -103,7 +103,7 @@ def run_training():
         shuffle=False
     )
 
-    model = DeepCaptchaModelSmallerTimeSteps(num_chars=len(lbl_enc.classes_))
+    model = DeepCaptchaModel(num_chars=len(lbl_enc.classes_))
     model.to(config.DEVICE)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)

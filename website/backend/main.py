@@ -6,46 +6,41 @@ import tempfile
 from pathlib import Path
 import ast
 import json
+from src.predict import predict_captcha
+from src.clean_output import clean_output
 
 app = FastAPI()
 
 @app.post("/predict")
 async def predict_captcha_route(file: UploadFile = File(...)):
     try:
-        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            temp_file.write(await file.read())
-            temp_file_path = temp_file.name
+        # Define your desired save path
+        save_path = "website/backend/input_file.jpg"
+
+        # Ensure parent directory exists
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+        # Save the uploaded file to the desired path
+        with open(save_path, "wb") as image_file:
+            image_file.write(await file.read())
+
+        print(f"Image successfully saved to: {save_path}")
 
         model_path = os.path.abspath("models/captcha_model_temp_3_final.pth")
         encoder_path = os.path.abspath("assets/encoder_temp_3_final.pkl")
 
-        print(f"Temporary file saved at: {temp_file_path}")
         print(f"Using model file from: {model_path}")
         print(f"Using encoder file from: {encoder_path}")
 
-        working_directory = Path(__file__).parent.parent.parent  
+        prediction = predict_captcha(save_path)
+        print(prediction)
+        prediction = prediction["predictions"][0]
+        clean_prediction = clean_output(prediction)
+        print("clean_prediction", clean_prediction)
 
-        result = subprocess.run(
-            ['python3', 'src/predict.py', temp_file_path, encoder_path, model_path],
-            capture_output=True, text=True, env=os.environ, cwd=working_directory
-        )
+        return JSONResponse(content={"prediction": prediction, "clean_prediction": clean_prediction}, status_code=200)
 
-        print(f"Subprocess stdout: {result.stdout}")
-        print(f"Subprocess stderr: {result.stderr}")
 
-        if result.returncode != 0:
-            return JSONResponse(content={"error": "Error occurred while running prediction", "details": result.stderr}, status_code=500)
-
-        output = result.stdout
-        print(f"Prediction Output    : {output}")
-        print(type(output))
-        output1 = ast.literal_eval(output) 
-        print("output1", output1)
-
-        print("output1['predictions']", output1['predictions'][0])
-        return JSONResponse(content={
-            "predictions": output1['predictions'][0],
-        })
 
     except Exception as e:
         print(f"Exception occurred: {str(e)}")

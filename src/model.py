@@ -65,98 +65,98 @@ class CaptchaModel(nn.Module):
             return x, loss
         return x, None
     
-class DeepCaptchaModel(nn.Module):
-    def __init__(self, num_chars, img_height=75, img_width=300):
-        super(DeepCaptchaModel, self).__init__()
+# class DeepCaptchaModel(nn.Module):
+#     def __init__(self, num_chars, img_height=75, img_width=300):
+#         super(DeepCaptchaModel, self).__init__()
 
-        # Convolutional Backbone
-        self.conv_1 = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.MaxPool2d(2)
-        )
+#         # Convolutional Backbone
+#         self.conv_1 = nn.Sequential(
+#             nn.Conv2d(3, 64, kernel_size=3, padding=1),
+#             nn.BatchNorm2d(64),
+#             nn.ReLU(),
+#             nn.MaxPool2d(2)
+#         )
 
-        self.conv_2 = nn.Sequential(
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.MaxPool2d(2)
-        )
+#         self.conv_2 = nn.Sequential(
+#             nn.Conv2d(64, 128, kernel_size=3, padding=1),
+#             nn.BatchNorm2d(128),
+#             nn.ReLU(),
+#             nn.MaxPool2d(2)
+#         )
 
-        self.conv_3 = nn.Sequential(
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-            nn.MaxPool2d((2, 1))  # only pool height a bit here to keep width longer for GRU
-        )
+#         self.conv_3 = nn.Sequential(
+#             nn.Conv2d(128, 256, kernel_size=3, padding=1),
+#             nn.BatchNorm2d(256),
+#             nn.ReLU(),
+#             nn.MaxPool2d((2, 1))  # only pool height a bit here to keep width longer for GRU
+#         )
 
-        self.conv_4 = nn.Sequential(
-            nn.Conv2d(256, 512, kernel_size=3, padding=1),
-            nn.BatchNorm2d(512),
-            nn.ReLU(),
-            nn.MaxPool2d((2, 1))
-        )
+#         self.conv_4 = nn.Sequential(
+#             nn.Conv2d(256, 512, kernel_size=3, padding=1),
+#             nn.BatchNorm2d(512),
+#             nn.ReLU(),
+#             nn.MaxPool2d((2, 1))
+#         )
 
-        self.fc = nn.Linear(2048, 256)
+#         self.fc = nn.Linear(2048, 256)
 
-        # GRU for sequence modeling
-        self.gru = nn.GRU(
-            input_size=256,
-            hidden_size=128,
-            num_layers=2,
-            # batch_first=True,
-            bidirectional=True,
-            dropout=0.25
-        )
+#         # GRU for sequence modeling
+#         self.gru = nn.GRU(
+#             input_size=256,
+#             hidden_size=128,
+#             num_layers=2,
+#             # batch_first=True,
+#             bidirectional=True,
+#             dropout=0.25
+#         )
 
-        # Output
-        self.output = nn.Linear(128 * 2, num_chars + 1)  # +1 for CTC blank token
+#         # Output
+#         self.output = nn.Linear(128 * 2, num_chars + 1)  # +1 for CTC blank token
 
-    def _forward_conv(self, x):
-        x = self.conv_1(x)
-        x = self.conv_2(x)
-        x = self.conv_3(x)
-        x = self.conv_4(x)
-        # print(x.shape)
-        return x
+#     def _forward_conv(self, x):
+#         x = self.conv_1(x)
+#         x = self.conv_2(x)
+#         x = self.conv_3(x)
+#         x = self.conv_4(x)
+#         # print(x.shape)
+#         return x
 
-    def forward(self, images, targets=None):
-        bs, c, h, w = images.size()
+#     def forward(self, images, targets=None):
+#         bs, c, h, w = images.size()
 
-        x = self._forward_conv(images)
-        # print(x.shape)
-        # Prepare for RNN
-        x = x.permute(0, 3, 1, 2)  # [batch, width, channels, height]
-        # print(x.shape)
-        x = x.view(bs, x.size(1), -1)  # Flatten channels and height
-        # print(x.shape)
-        x = self.fc(x)
-        # print(x.shape)
+#         x = self._forward_conv(images)
+#         # print(x.shape)
+#         # Prepare for RNN
+#         x = x.permute(0, 3, 1, 2)  # [batch, width, channels, height]
+#         # print(x.shape)
+#         x = x.view(bs, x.size(1), -1)  # Flatten channels and height
+#         # print(x.shape)
+#         x = self.fc(x)
+#         # print(x.shape)
 
-        # GRU
-        x, _ = self.gru(x)
+#         # GRU
+#         x, _ = self.gru(x)
 
-        # Final output
-        x = self.output(x)
-        # print(x.shape)
+#         # Final output
+#         x = self.output(x)
+#         # print(x.shape)
 
-        # CTC loss expects (T, N, C)
-        x = x.permute(1, 0, 2)
-        # print(x.shape)
+#         # CTC loss expects (T, N, C)
+#         x = x.permute(1, 0, 2)
+#         # print(x.shape)
 
-        if targets is not None:
-            log_softmax_values = F.log_softmax(x, dim=2)
-            input_lengths = torch.full(size=(bs,), fill_value=log_softmax_values.size(0), dtype=torch.int32)
-            target_lengths = torch.full(size=(bs,), fill_value=targets.size(1), dtype=torch.int32)
-            loss = nn.CTCLoss(blank=0)(log_softmax_values, targets, input_lengths, target_lengths)
-            return x, loss
+#         if targets is not None:
+#             log_softmax_values = F.log_softmax(x, dim=2)
+#             input_lengths = torch.full(size=(bs,), fill_value=log_softmax_values.size(0), dtype=torch.int32)
+#             target_lengths = torch.full(size=(bs,), fill_value=targets.size(1), dtype=torch.int32)
+#             loss = nn.CTCLoss(blank=0)(log_softmax_values, targets, input_lengths, target_lengths)
+#             return x, loss
 
-        return x, None
+#         return x, None
     
-class DeepCaptchaModelSmallerTimeSteps(nn.Module):
+class DeepCaptchaModel(nn.Module):
     def __init__(self, num_chars):
-        super(DeepCaptchaModelSmallerTimeSteps, self).__init__()
+        super(DeepCaptchaModel, self).__init__()
         self.conv_1 = nn.Conv2d(3, 128, kernel_size=3, padding=1, stride=2)  # added stride=2
         self.bn1 = nn.BatchNorm2d(128)
         
@@ -206,7 +206,7 @@ class DeepCaptchaModelSmallerTimeSteps(nn.Module):
             return x, loss
         return x, None
     
-class DeepCaptchaModelSmallerTimeStepsV2(nn.Module):
+class DeepCaptchaModelSmallerTimeSteps(nn.Module):
     def __init__(self, num_chars):
         super(DeepCaptchaModelSmallerTimeSteps, self).__init__()
         self.conv_1 = nn.Conv2d(3, 128, kernel_size=3, padding=1, stride=2)  # added stride=2

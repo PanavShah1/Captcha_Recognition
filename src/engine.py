@@ -1,6 +1,6 @@
 from tqdm import tqdm #
 import torch
-import config
+import src.config as config
 
 def train_fn(model, data_loader, optimizer):
     model.train()

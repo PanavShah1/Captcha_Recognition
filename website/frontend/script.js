@@ -11,6 +11,7 @@ imageInput.addEventListener("change", () => {
         currentFile = file;
         preview.src = URL.createObjectURL(file);
         preview.style.display = "block";
+        submitImage();
     }
 });
 
@@ -22,6 +23,7 @@ pasteArea.addEventListener("paste", (e) => {
             currentFile = file;
             preview.src = URL.createObjectURL(file);
             preview.style.display = "block";
+            submitImage(); 
             break;
         }
     }
@@ -43,7 +45,7 @@ async function submitImage() {
         });
 
         const data = await response.json();
-        resultBox.textContent = "Prediction: " + data['predictions'];
+        resultBox.innerHTML = "Prediction<br><br>" + data['clean_prediction'] + "<br><br>" + data['prediction'] ;
     } catch (err) {
         resultBox.textContent = "Error occurred while decoding.";
         console.error(err);

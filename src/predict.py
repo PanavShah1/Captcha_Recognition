@@ -7,15 +7,15 @@ import os
 from pathlib import Path
 from sklearn import preprocessing
 
-from model import CaptchaModel, DeepCaptchaModel, DeepCaptchaModelSmallerTimeSteps
-from dataset import ClassificationDataset
-import config
-from train import decode_predictions
+from src.model import CaptchaModel, DeepCaptchaModel
+from src.dataset import ClassificationDataset
+import src.config as config
+from src.train import decode_predictions
 from pprint import pprint
 
-MODEL_PATH = Path("models/captcha_model_temp_3_final.pth")
+MODEL_PATH = Path("models/captcha_model_final.pth")
 IMAGE_PATHS = Path("test_images")
-ENCODER_PATH = Path("assets/encoder_temp_3_final.pkl")
+ENCODER_PATH = Path("assets/encoder_final.pkl")
 
 def multiple_predict_captcha(IMAGE_PATHS, ENCODER_PATH, MODEL_PATH):
     # Load the model
@@ -42,7 +42,7 @@ def multiple_predict_captcha(IMAGE_PATHS, ENCODER_PATH, MODEL_PATH):
     )
     # print(f"Dataset size: {len(dataset)}")
 
-    model = DeepCaptchaModelSmallerTimeSteps(num_chars=len(lbl_enc.classes_))
+    model = DeepCaptchaModel(num_chars=len(lbl_enc.classes_))
     model.load_state_dict(torch.load(MODEL_PATH, map_location=config.DEVICE))
     model.to(config.DEVICE)
     model.eval()
@@ -65,7 +65,7 @@ def multiple_predict_captcha(IMAGE_PATHS, ENCODER_PATH, MODEL_PATH):
         }
     
 
-def predict_captcha(IMAGE_PATH, ENCODER_PATH, MODEL_PATH):
+def predict_captcha(IMAGE_PATH, ENCODER_PATH=ENCODER_PATH, MODEL_PATH=MODEL_PATH):
     # Load the model
     images = [IMAGE_PATH] 
     # print(images)
@@ -90,7 +90,7 @@ def predict_captcha(IMAGE_PATH, ENCODER_PATH, MODEL_PATH):
     )
     # print(f"Dataset size: {len(dataset)}")
 
-    model = DeepCaptchaModelSmallerTimeSteps(num_chars=len(lbl_enc.classes_))
+    model = DeepCaptchaModel(num_chars=len(lbl_enc.classes_))
     model.load_state_dict(torch.load(MODEL_PATH, map_location=config.DEVICE))
     model.to(config.DEVICE)
     model.eval()
@@ -114,5 +114,8 @@ def predict_captcha(IMAGE_PATH, ENCODER_PATH, MODEL_PATH):
 
 
 if __name__ == "__main__":
-    print(multiple_predict_captcha(IMAGE_PATHS, ENCODER_PATH, MODEL_PATH))
-    print(predict_captcha("test_images/4BhIQ.jpg", ENCODER_PATH, MODEL_PATH))
+    predicted = multiple_predict_captcha(IMAGE_PATHS, ENCODER_PATH, MODEL_PATH)
+    for image, pred in zip(predicted["images"], predicted["predictions"]):
+        print(f"Image: {image}")
+        print(f"Prediction: {pred}")
+    print(predict_captcha("test_images/03qk.jpg", ENCODER_PATH, MODEL_PATH))
